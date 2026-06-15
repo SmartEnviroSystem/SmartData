@@ -50,6 +50,7 @@ import java.io.StringWriter;
 import java.time.LocalDate;
 import java.sql.Date;
 import java.sql.Time;
+import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -1274,10 +1275,25 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 case "timestamptz":
                     if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.TIMESTAMP);
-                    } else {
+                    } else if (value.getValueType() == ValueType.STRING) {
+                        // ISO-String wie "2024-01-01T00:00:00"
                         JsonString jts = (JsonString) value;
                         LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
                         pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                    } else if (value.getValueType() == ValueType.NUMBER) {
+                        // Long-Wert (z.B. Unix Sekunden oder Millisekunden)
+                        JsonNumber jnum = (JsonNumber) value;
+                        long raw = jnum.longValue();
+
+                        // Heuristik: Millisekunden → Sekunden
+                        if (raw > 10_000_000_000L) { // größer als 10 Milliarden → Millisekunden
+                            raw = raw / 1000;
+                        }
+
+                        LocalDateTime ldt = LocalDateTime.ofEpochSecond(raw, 0, ZoneOffset.UTC);
+                        pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                    } else {
+                        throw new DynException("Unsupported timestamptz value type: " + value.getValueType());
                     }
                     break;
                 case "time":
@@ -1308,6 +1324,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         // Given value is string
                         JsonString jjson = (JsonString) value;
                         pstmt.setString(pindex, jjson.getString());
+                    }
+                    break;
+                case "jsonb":
+                    if (value == null || isEmpty) {
+                        pstmt.setNull(pindex, java.sql.Types.OTHER);
+                    } else {
+                        pstmt.setObject(pindex, value.toString(), java.sql.Types.OTHER);
                     }
                     break;
                 case "geometry":
