@@ -18,7 +18,7 @@ var SWAC_config = {
     },
     onlinereactions: [],
     globalparams: {
-        defaultstorage: "smartmonitoring"
+        defaultstorage: "public"
     }
 };
 
