@@ -16,7 +16,10 @@ var SWAC_config = {
     progressive: {
         active: false
     },
-    onlinereactions: []
+    onlinereactions: [],
+    globalparams: {
+        defaultstorage: "smartmonitoring"
+    }
 };
 
 /**
