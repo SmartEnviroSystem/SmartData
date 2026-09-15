@@ -110,7 +110,7 @@ public class SystemResource {
         // Init config
         Configuration conf = new Configuration();
 
-        rob.add("version", "19.05.2023");
+        rob.add("version", "15.09.2026");
         // IP adress
         try {
             rob.add("publicip", InetAddress.getLocalHost().getHostAddress());
